@@ -1,0 +1,71 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+data = pd.read_csv('marketing_sales_data.csv')
+data.head()
+
+sns.boxplot(x = "TV", y = "Sales", data = data);
+
+sns.boxplot(x = "Influencer", y = "Sales", data = data);
+
+data = data.dropna(axis=0)
+
+data.isnull().sum(axis=1)
+
+#DEFINE OLS FORMULA
+# Define the OLS formula.
+ols_formula = 'Sales ~ C(TV)'
+# Create an OLS model.
+OLS = ols(formula = ols_formula, data = data)
+# Fit the model.
+model = OLS.fit()
+# Save the results summary.
+model_results = model.summary()
+# Display the model results.
+model_results
+
+#MODEL ASSUMPTIONS: NORMALITY
+residuals = model.resid
+# Create a 1x2 plot figure.
+fig, axes = plt.subplots(1, 2, figsize = (8,4))
+# Create a histogram with the residuals.
+sns.histplot(residuals, ax=axes[0])
+# Set the x label of the residual plot.
+axes[0].set_xlabel("Residual Value")
+# Set the title of the residual plot.
+axes[0].set_title("Histogram of Residuals")
+# Create a QQ plot of the residuals.
+sm.qqplot(residuals, line='s',ax = axes[1])
+# Set the title of the QQ plot.
+axes[1].set_title("Normal QQ Plot")
+# Use matplotlib's tight_layout() function to add space between plots for a cleaner appearance.
+plt.tight_layout()
+# Show the plot.
+plt.show()
+
+# MODEL ASSUMPTION: HOMOSCEDASTICITY
+fig = sns.scatterplot(x = model.fittedvalues, y = model.resid)
+# Set the x axis label
+fig.set_xlabel("Fitted Values")
+# Set the y axis label
+fig.set_ylabel("Residuals")
+# Set the title
+fig.set_title("Fitted Values v. Residuals")
+# Add a line at y = 0 to visualize the variance of residuals above and below 0.
+fig.axhline(0)
+# Show the plot
+plt.show()
+
+model_results
+
+
+# ONE WAY ANOVA TEST
+sm.stats.anova_lm(model, typ = 1)
+
+# ANOVA post hoc test
+tukey_oneway = pairwise_tukeyhsd(endog = data["Sales"], groups = data["TV"])
+tukey_oneway.summary()
